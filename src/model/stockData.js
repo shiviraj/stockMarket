@@ -47,4 +47,4 @@ const StockData = new mongoose.Schema(
     }
   });
 
-module.exports = mongoose.model('StockData', StockData);
+module.exports = mongoose.model('Stock', StockData);
