@@ -2,9 +2,10 @@ const axios = require("axios");
 const moment = require("moment-timezone");
 const StockData = require('./model/stockData')
 
+const TIMEZONE = 'Asia/Kolkata'
 
 const parseData = function (data) {
-  const time = moment(data.LastTrdTime, "DD MMM YYYY HH:mm").tz("Asia/Kolkata")
+  const time = moment(data.LastTrdTime, "DD MMM YYYY HH:mm").tz(TIMEZONE)
   data.LastTrdTime = time
   data.Symbol = data.ScripName
   data.key = `${data.Symbol} ${time}`
@@ -22,20 +23,24 @@ const parseData = function (data) {
 
 let retry = 0;
 let pageNo = 1;
+
+const getData = async function () {
+  const {data} = await axios.get(process.env.BSE_URI, {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:85.0) Gecko/20100101 Firefox/85.0',
+    params: {flag: 'Equity', ddlVal1: 'All', ddlVal2: 'All', m: 0, pgN: pageNo++}
+  })
+  return data;
+}
+
 const fetchAndSaveStockData = async function () {
   try {
-    const {data} = await axios.get(process.env.BSE_URI, {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:85.0) Gecko/20100101 Firefox/85.0',
-      params: {flag: 'Equity', ddlVal1: 'All', ddlVal2: 'All', m: 0, pgN: pageNo++}
+    if (pageNo === 21) return pageNo = 1
+    const data = await getData();
+    data.forEach(stockData => {
+      new StockData(parseData(stockData)).save().catch(e => ({}))
     })
-    if (!data.length || pageNo === 21) return pageNo = 1
-    for (const stockData of data) {
-      const parsedData = parseData(stockData)
-      await new StockData(parsedData).save().catch(e => {
-      })
-    }
     retry = 0
-    console.log('update data of page:', pageNo - 1, moment().utc().tz('Asia/kolkata').format('MMM DD, YYYY hh:mm:ss:A'))
+    console.log('update data of page:', pageNo - 1, moment().utc().tz(TIMEZONE).format('MMM DD, YYYY hh:mm:ss:A'))
     return await fetchAndSaveStockData()
   } catch (e) {
     retry++;
@@ -43,8 +48,15 @@ const fetchAndSaveStockData = async function () {
   }
 }
 
+const isMarketOpen = function () {
+  const today = moment().format('YYYY-MM-DD')
+  const now = moment().utc().tz(TIMEZONE);
+  return now.isBetween(`${today}T08:30:00+05:30`, `${today}T16:30:00+05:30`) && moment().utc().day()
+}
+
 const runBatchJob = async function () {
-  await fetchAndSaveStockData();
+  if (isMarketOpen())
+    await fetchAndSaveStockData();
 
 }
 
