@@ -1,10 +1,10 @@
 const axios = require("axios");
-const moment = require("moment");
+const moment = require("moment-timezone");
 const StockData = require('./model/stockData')
 
 
 const parseData = function (data) {
-  const time = moment(data.LastTrdTime, "DD MMM YYYY HH:mm")
+  const time = moment(data.LastTrdTime, "DD MMM YYYY HH:mm").tz("Asia/Kolkata")
   data.LastTrdTime = time
   data.Symbol = data.ScripName
   data.key = `${data.Symbol} ${time}`
