@@ -28,20 +28,19 @@ const fetchAndSaveStockData = async function () {
       'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:85.0) Gecko/20100101 Firefox/85.0',
       params: {flag: 'Equity', ddlVal1: 'All', ddlVal2: 'All', m: 0, pgN: pageNo++}
     })
-    if (!data.length) return pageNo = 1
+    if (!data.length || pageNo === 21) return pageNo = 1
     for (const stockData of data) {
       const parsedData = parseData(stockData)
       await new StockData(parsedData).save().catch(e => {
       })
     }
     retry = 0
-    console.log('update data of page:', pageNo - 1, moment().format("MMM DD, YYYY HH:mm:ss"))
+    console.log('update data of page:', pageNo - 1, moment().utc().tz('Asia/kolkata').format('MMM DD, YYYY hh:mm:ss:A'))
     return await fetchAndSaveStockData()
   } catch (e) {
     retry++;
     return (retry < 3) && await fetchAndSaveStockData()
   }
-
 }
 
 const runBatchJob = async function () {
@@ -51,7 +50,7 @@ const runBatchJob = async function () {
 
 const main = async () => {
   await runBatchJob()
-  setInterval(runBatchJob, 600000)
+  setInterval(runBatchJob, 900000)
 }
 
 main()
