@@ -2,13 +2,13 @@ const mongoose = require('mongoose');
 
 const StockData = new mongoose.Schema(
   {
-    key: {type: String, unique: true, required: true},
+    key: {type: String, required: true, unique: true, index: true},
     LongName: {type: String, required: true},
     UlaValue: {type: Number, required: true},
-    LastTrdTime: {type: Number, required: true},
+    LastTrdTime: {type: Number, required: true, index: true},
     ATP: {type: Number, required: true},
     PercentChange: {type: Number, required: true},
-    Symbol: {type: String, required: true},
+    Symbol: {type: String, required: true, index: true},
     Price: {type: Number, required: true},
     Change: {type: Number, required: true},
     Volume: {type: Number, required: true},
